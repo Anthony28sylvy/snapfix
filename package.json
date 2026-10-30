@@ -1,0 +1,14 @@
+{
+  "name": "snapfix",
+  "version": "1.0.0",
+  "description": "Photo-based home repair guide: diagnosis, steps, shopping list and pro quote tools.",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "local": "node --env-file=.env server.js",
+    "mock": "MOCK=1 node server.js",
+    "test": "node test.js"
+  },
+  "engines": { "node": ">=20.6" }
+}

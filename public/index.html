@@ -1,0 +1,804 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Snapfix</title>
+<meta name="description" content="Photograph a home repair problem. Get the diagnosis, step-by-step fix, shopping list and a way to compare pro quotes.">
+<meta name="theme-color" content="#F2B600">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" href="/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/icon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=IBM+Plex+Mono:wght@400;500&family=Public+Sans:wght@400;500;600&display=swap">
+<style>
+:root { color-scheme: light; padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+body { margin: 0; }
+img { max-width: 100%; }
+[hidden] { display: none !important; }
+/* Layout: sticky intake panel on the left, tabbed repair plan on the right; stacks on phones. A tape-measure ruler under the header is the one signature detail. */
+:root {
+  --bg: #ECEFEA;
+  --card: #FAFAF6;
+  --ink: #1A2227;
+  --muted: #566269;
+  --line: #CBD2CC;
+  --accent: #F2B600;
+  --accent-ink: #1A2227;
+  --danger: #B3261E;
+  --danger-bg: #F7E3E0;
+  --ok: #2B7A4B;
+  --ok-bg: #E0EFE5;
+  --font-display: "Barlow Condensed", "Arial Narrow", "Helvetica Neue", Arial, sans-serif;
+  --font-body: "Public Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #12171A;
+    --card: #1B2226;
+    --ink: #E8ECE9;
+    --muted: #9AA7AD;
+    --line: #2F393E;
+    --accent: #F5C21B;
+    --accent-ink: #1A2227;
+    --danger: #FF9187;
+    --danger-bg: #3A2220;
+    --ok: #7FD6A0;
+    --ok-bg: #1D3327;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #12171A;
+  --card: #1B2226;
+  --ink: #E8ECE9;
+  --muted: #9AA7AD;
+  --line: #2F393E;
+  --accent: #F5C21B;
+  --accent-ink: #1A2227;
+  --danger: #FF9187;
+  --danger-bg: #3A2220;
+  --ok: #7FD6A0;
+  --ok-bg: #1D3327;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font: 15px/1.55 var(--font-body);
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 20px 56px;
+}
+.shell { max-width: 1120px; margin: 0 auto; }
+h1, h2, h3, h4, p { margin: 0; }
+h1, h2, h3 { font-family: var(--font-display); text-wrap: balance; letter-spacing: 0.01em; }
+a { color: inherit; }
+button, input, select, textarea { font: inherit; color: inherit; }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.muted { color: var(--muted); }
+.mono { font-family: var(--font-mono); }
+
+/* Header */
+.top { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 8px 24px; padding-bottom: 12px; }
+.brand { font-family: var(--font-display); font-weight: 800; font-size: 40px; line-height: 1; text-transform: uppercase; letter-spacing: 0.02em; }
+.brand span { background: var(--accent); color: var(--accent-ink); padding: 0 6px; margin-left: 2px; }
+.tag { color: var(--muted); max-width: 46ch; }
+.ruler {
+  height: 14px; margin-bottom: 28px; opacity: 0.55;
+  background:
+    repeating-linear-gradient(90deg, var(--ink) 0 1.5px, transparent 1.5px 40px) left bottom / 100% 14px no-repeat,
+    repeating-linear-gradient(90deg, var(--ink) 0 1px, transparent 1px 8px) left bottom / 100% 7px no-repeat;
+  border-bottom: 1.5px solid var(--ink);
+}
+
+/* Layout */
+.layout { display: grid; grid-template-columns: minmax(0, 340px) minmax(0, 1fr); gap: 32px; align-items: start; }
+@media (max-width: 880px) { .layout { grid-template-columns: minmax(0, 1fr); gap: 28px; } }
+.intake { position: sticky; top: 16px; display: grid; gap: 16px; }
+@media (max-width: 880px) { .intake { position: static; } }
+.label-h { font-family: var(--font-mono); font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); }
+.intake h2 { font-size: 30px; font-weight: 700; text-transform: uppercase; line-height: 1.05; }
+
+.drop {
+  position: relative; display: grid; place-items: center; text-align: center; gap: 4px;
+  min-height: 150px; padding: 16px; cursor: pointer;
+  border: 2px dashed var(--ink); border-radius: 6px; background: var(--card);
+}
+.drop:hover, .drop.over { background: color-mix(in srgb, var(--accent) 18%, var(--card)); }
+.drop input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+.drop strong { font-family: var(--font-display); font-size: 22px; text-transform: uppercase; letter-spacing: 0.03em; }
+.drop img { max-width: 100%; max-height: 220px; border-radius: 4px; display: block; }
+.drop.has-photo { padding: 8px; }
+.drop.has-photo .drop-text { display: none; }
+.drop.has-photo input { pointer-events: none; }
+.remove-photo { justify-self: start; }
+.field { display: grid; gap: 6px; }
+.field label { font-weight: 600; font-size: 13px; }
+.field input, .field select, .field textarea {
+  width: 100%; padding: 9px 10px; border: 1.5px solid var(--line); border-radius: 4px; background: var(--card);
+}
+.field textarea { min-height: 84px; resize: vertical; }
+.field input:focus, .field select:focus, .field textarea:focus { border-color: var(--ink); }
+.two { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; }
+
+.btn {
+  font-family: var(--font-display); font-weight: 700; font-size: 20px; letter-spacing: 0.06em; text-transform: uppercase;
+  padding: 10px 18px; border: 2px solid var(--ink); border-radius: 4px; cursor: pointer; background: var(--accent); color: var(--accent-ink);
+}
+.btn:hover { filter: brightness(1.06); }
+.btn:disabled { opacity: 0.55; cursor: not-allowed; }
+.btn.ghost { background: transparent; color: var(--ink); }
+.btn.small { font-size: 15px; padding: 5px 10px; letter-spacing: 0.05em; }
+.status { min-height: 1.5em; font-size: 13px; color: var(--muted); }
+.status.err { color: var(--danger); }
+.fine { font-size: 12px; color: var(--muted); }
+
+/* Results */
+.results { display: grid; gap: 20px; min-width: 0; }
+.banner { background: var(--ink); color: var(--bg); padding: 8px 12px; border-radius: 4px; font-size: 13px; }
+.notice, .danger, .safety { padding: 14px 16px; border-radius: 6px; border: 1.5px solid var(--ink); background: var(--card); }
+.danger, .safety { border-color: var(--danger); background: var(--danger-bg); }
+.danger h3, .safety h3 { color: var(--danger); font-size: 20px; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; }
+.safety { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px 24px; }
+.safety ul { margin: 6px 0 0; padding-left: 18px; display: grid; gap: 4px; }
+.diag h2 { font-size: clamp(32px, 5vw, 46px); font-weight: 700; line-height: 1.02; text-transform: uppercase; margin: 8px 0; }
+.lede { color: var(--muted); max-width: 62ch; font-size: 16px; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { font-family: var(--font-mono); font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.06em; padding: 3px 8px; border: 1.5px solid var(--ink); border-radius: 3px; background: var(--card); }
+.chip.warn { background: var(--danger-bg); border-color: var(--danger); color: var(--danger); }
+.chip.good { background: var(--ok-bg); border-color: var(--ok); color: var(--ok); }
+.chip.hot { background: var(--accent); color: var(--accent-ink); }
+
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); border: 1.5px solid var(--ink); border-radius: 6px; background: var(--card); }
+.stat { padding: 10px 14px; border-left: 1.5px solid var(--line); min-width: 0; }
+.stat:first-child { border-left: 0; }
+.stat .k { font-family: var(--font-mono); font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+.stat .v { font-family: var(--font-display); font-weight: 700; font-size: 26px; line-height: 1.15; font-variant-numeric: tabular-nums; }
+
+.tabs { display: flex; gap: 0; border-bottom: 2px solid var(--ink); overflow-x: auto; }
+.tab {
+  font-family: var(--font-display); font-weight: 700; font-size: 20px; letter-spacing: 0.05em; text-transform: uppercase;
+  padding: 8px 16px; background: transparent; border: 0; border-bottom: 5px solid transparent; margin-bottom: -2px; cursor: pointer; color: var(--muted); white-space: nowrap;
+}
+.tab[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--accent); }
+.tab .count { font-family: var(--font-mono); font-size: 12px; margin-left: 6px; }
+.panel { display: grid; gap: 18px; padding-top: 4px; min-width: 0; }
+.panel h3 { font-size: 24px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; }
+
+.progress { font-family: var(--font-mono); font-size: 12.5px; color: var(--muted); }
+.steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.steps li { display: grid; grid-template-columns: 38px minmax(0, 1fr) auto; gap: 12px; align-items: start; padding: 14px; background: var(--card); border: 1.5px solid var(--line); border-radius: 6px; }
+.steps .n { font-family: var(--font-display); font-weight: 800; font-size: 22px; width: 38px; height: 38px; display: grid; place-items: center; background: var(--ink); color: var(--bg); border-radius: 4px; }
+.steps .st-title { font-family: var(--font-display); font-weight: 700; font-size: 22px; text-transform: uppercase; letter-spacing: 0.02em; line-height: 1.15; display: block; }
+.steps .body p { margin-top: 4px; max-width: 64ch; }
+.steps .tip { color: var(--muted); font-size: 14px; }
+.steps .tip b { font-family: var(--font-mono); font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink); }
+.steps .done-box { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; cursor: pointer; padding-top: 8px; }
+.steps li.done { background: var(--ok-bg); border-color: var(--ok); }
+.steps li.done .st-title { text-decoration: line-through; text-decoration-thickness: 2px; }
+input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--ink); cursor: pointer; flex: none; }
+
+.items { display: grid; gap: 8px; }
+.item { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 14px; padding: 12px 14px; background: var(--card); border: 1.5px solid var(--line); border-radius: 6px; }
+.item .name { font-weight: 600; }
+.item .sub { color: var(--muted); font-size: 13.5px; grid-column: 1; }
+.item .price { font-family: var(--font-mono); font-weight: 500; grid-column: 2; grid-row: 1; text-align: right; font-variant-numeric: tabular-nums; }
+.item.have { opacity: 0.55; }
+.item.have .price, .item.have .name { text-decoration: line-through; }
+.item .meta { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; font-size: 13px; padding-top: 4px; }
+.item .meta a { font-weight: 600; text-underline-offset: 3px; }
+.item .own { display: flex; align-items: center; gap: 6px; margin-left: auto; cursor: pointer; }
+.total { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; padding: 12px 14px; background: var(--ink); color: var(--bg); border-radius: 6px; }
+.total .num { font-family: var(--font-display); font-weight: 800; font-size: 30px; font-variant-numeric: tabular-nums; }
+
+.compare { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+.card { padding: 14px 16px; background: var(--card); border: 1.5px solid var(--line); border-radius: 6px; min-width: 0; }
+.card .big { font-family: var(--font-display); font-weight: 800; font-size: 34px; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.card.hl { border-color: var(--ink); background: color-mix(in srgb, var(--accent) 22%, var(--card)); }
+.links { display: flex; flex-wrap: wrap; gap: 8px; }
+.links a { text-decoration: none; padding: 7px 12px; border: 1.5px solid var(--ink); border-radius: 4px; font-weight: 600; font-size: 14px; background: var(--card); }
+.links a:hover { background: var(--accent); color: var(--accent-ink); }
+.request { white-space: pre-wrap; padding: 14px 16px; background: var(--card); border: 1.5px dashed var(--ink); border-radius: 6px; font-size: 14px; max-width: 70ch; }
+.qform { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr) auto; gap: 8px; align-items: end; }
+@media (max-width: 640px) { .qform { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } .qform .field:first-child { grid-column: 1 / -1; } }
+.qrow { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 6px 12px; align-items: center; padding: 10px 14px; background: var(--card); border: 1.5px solid var(--line); border-radius: 6px; }
+.qrow.low { border-color: var(--ok); background: var(--ok-bg); }
+.qrow .amt { font-family: var(--font-display); font-weight: 800; font-size: 26px; font-variant-numeric: tabular-nums; }
+.qrow .note { grid-column: 1 / -1; font-size: 13px; color: var(--muted); }
+.foot { font-size: 12.5px; color: var(--muted); max-width: 80ch; border-top: 1.5px solid var(--line); padding-top: 14px; }
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; transition: none !important; } }
+</style>
+</head>
+<body>
+<div class="shell">
+  <header class="top">
+    <h1 class="brand">Snap<span>fix</span></h1>
+    <p class="tag">Photograph the problem. Get the repair steps, a shopping list, and what a pro would charge.</p>
+  </header>
+  <div class="ruler" aria-hidden="true"></div>
+
+  <main class="layout">
+    <section class="intake" aria-labelledby="intake-h">
+      <div>
+        <p class="label-h">New job</p>
+        <h2 id="intake-h">What's broken?</h2>
+      </div>
+
+      <label class="drop" id="drop" for="photo">
+        <input id="photo" type="file" accept="image/*">
+        <div class="drop-text">
+          <strong>Add a photo</strong>
+          <span class="muted">Tap to take or choose one, or drop it here. Get close and show the whole fixture.</span>
+        </div>
+        <img id="preview" alt="Your photo of the problem" hidden>
+      </label>
+      <button class="btn ghost small remove-photo" id="remove-photo" type="button" hidden>Remove photo</button>
+
+      <div class="field">
+        <label for="notes">What's happening? (optional)</label>
+        <textarea id="notes" placeholder="Drips even when the handle is off. Started last week."></textarea>
+      </div>
+      <div class="two">
+        <div class="field">
+          <label for="zip">ZIP code</label>
+          <input id="zip" inputmode="numeric" autocomplete="postal-code" maxlength="10" placeholder="For local pros">
+        </div>
+        <div class="field">
+          <label for="skill">Your experience</label>
+          <select id="skill">
+            <option value="a beginner who has never done this repair">Beginner</option>
+            <option value="comfortable with basic tools and simple repairs" selected>Handy</option>
+            <option value="experienced with home repair">Experienced</option>
+          </select>
+        </div>
+      </div>
+      <div style="display:flex; gap:10px; flex-wrap:wrap">
+        <button class="btn" id="go" type="button">Diagnose</button>
+        <button class="btn ghost" id="stop" type="button" hidden>Stop</button>
+      </div>
+      <p class="status" id="status" role="status" aria-live="polite"></p>
+      <p class="fine">Your photo is shrunk on your device, then sent to Claude to be analyzed. Snapfix does not keep it.</p>
+    </section>
+
+    <section class="results" id="results" aria-live="polite" aria-label="Repair plan"></section>
+  </main>
+
+  <p class="foot" style="margin-top:36px">Diagnoses and prices are AI estimates from a photo, not an inspection or a quote. For gas, main electrical, structural work, mold, or anything where a mistake could hurt someone, hire a licensed pro.</p>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  var $ = function (s, r) { return (r || document).querySelector(s); };
+  function el(tag, attrs) {
+    var n = document.createElement(tag);
+    if (attrs) Object.keys(attrs).forEach(function (k) {
+      var v = attrs[k];
+      if (v === null || v === undefined || v === false) return;
+      if (k === 'class') n.className = v;
+      else if (k === 'text') n.textContent = v;
+      else if (k.indexOf('on') === 0 && typeof v === 'function') n.addEventListener(k.slice(2), v);
+      else n.setAttribute(k, v === true ? '' : v);
+    });
+    for (var i = 2; i < arguments.length; i++) {
+      var kids = [].concat(arguments[i]);
+      for (var j = 0; j < kids.length; j++) {
+        var kid = kids[j];
+        if (kid === null || kid === undefined || kid === false) continue;
+        n.append(kid.nodeType ? kid : document.createTextNode(String(kid)));
+      }
+    }
+    return n;
+  }
+  function money(n) { return '$' + Math.round(n).toLocaleString('en-US'); }
+  function num(v) { var n = Number(v); return isFinite(n) && n >= 0 ? n : 0; }
+  function str(v, d) { return typeof v === 'string' && v.trim() ? v.trim() : (d || ''); }
+  function arr(v) { return Array.isArray(v) ? v : []; }
+  function enc(s) { return encodeURIComponent(s); }
+
+  var RETAIL = [
+    ['Home Depot', function (q) { return 'https://www.homedepot.com/s/' + enc(q); }],
+    ["Lowe's", function (q) { return 'https://www.lowes.com/search?searchTerm=' + enc(q); }],
+    ['Ace', function (q) { return 'https://www.acehardware.com/search?query=' + enc(q); }],
+    ['Amazon', function (q) { return 'https://www.amazon.com/s?k=' + enc(q); }]
+  ];
+
+  /* Example shown on first load so the tool opens in a working state */
+  var EXAMPLE = {
+    problem: 'Dripping single-handle kitchen faucet',
+    summary: 'Water is seeping out of the spout while the handle is off. That almost always means the cartridge or its rubber O-rings have worn out. It is a common repair, and the main water supply can stay on.',
+    confidence: 'high', difficulty: 'Beginner', timeEstimate: '45 min',
+    needsPro: false, needsProReason: null, proType: 'plumber',
+    proCost: { low: 150, high: 300 },
+    safety: ['Close both under-sink supply valves before you open anything.', 'Plug the drain with a rag so small screws cannot fall in.', 'Wrap tape or cloth around the wrench jaws to protect the finish.'],
+    stopAndCallPro: ['The under-sink shutoff valves will not close all the way.', 'Water leaks from the base of the faucet body, which can mean a cracked body.', 'The cartridge will not move after gentle rocking.'],
+    tools: [
+      { name: 'Adjustable wrench', why: 'Loosens the retaining nut or collar.', price: 15, search: 'adjustable wrench 10 inch' },
+      { name: 'Screwdriver and hex key set', why: 'Removes the handle screw, which is Phillips or hex depending on the faucet.', price: 12, search: 'screwdriver and hex key set' },
+      { name: 'Plumber\'s grease', why: 'Lubricates the new O-rings so the cartridge seats smoothly.', price: 6, search: 'plumbers silicone grease' },
+      { name: 'Painter\'s tape and a rag', why: 'Protects the chrome and blocks the drain.', price: 5, search: 'painters tape' }
+    ],
+    materials: [
+      { name: 'Replacement faucet cartridge', spec: 'Match the brand stamped on the faucet, or bring the old cartridge to the store', qty: '1', price: 25, search: 'single handle faucet cartridge replacement' },
+      { name: 'Spout O-ring kit', spec: 'Assorted sizes; match the old rings', qty: '1 kit', price: 7, search: 'faucet spout o-ring kit' }
+    ],
+    steps: [
+      { title: 'Shut off the water', detail: 'Turn both valves under the sink clockwise until they stop. Open the faucet to drain the lines and release pressure.', tip: null },
+      { title: 'Plug the drain', detail: 'Stuff a rag in the drain opening so a dropped screw cannot disappear.', tip: null },
+      { title: 'Remove the handle', detail: 'Pry off the small decorative cap with a flat screwdriver, remove the screw underneath, and lift the handle straight off.', tip: 'Take a photo of each stage so reassembly is easy.' },
+      { title: 'Open the cartridge housing', detail: 'Unscrew the collar or dome with the wrapped wrench. Some faucets hold the cartridge with a U-shaped clip instead. Pull that straight out.', tip: null },
+      { title: 'Pull the old cartridge', detail: 'Note which way the notch or flat side faces, then pull the cartridge straight up. Rock it gently if it sticks.', tip: 'Bring the old cartridge to the store so you buy a match.' },
+      { title: 'Clean and replace the O-rings', detail: 'Wipe the inside of the faucet body, swap the spout O-rings, and coat them with a thin layer of plumber\'s grease.', tip: null },
+      { title: 'Install the new cartridge', detail: 'Line up the notch the same way as before and press it fully down. Refit the clip or collar, snug but not forced.', tip: null },
+      { title: 'Reassemble and test', detail: 'Put the handle back, open the supply valves slowly, run hot and cold, then check under the sink and around the base for drips for ten minutes.', tip: null }
+    ],
+    videoSearches: ['how to fix a leaking single handle kitchen faucet', 'replace kitchen faucet cartridge', 'replace faucet spout o-rings'],
+    quoteRequest: 'Hi, I have a single-handle kitchen faucet that drips from the spout when it is off. I think the cartridge needs replacing. Could you give me an itemized quote for parts and labor, tell me the earliest available visit, and say whether there is a minimum service fee? Photos are attached. Thanks.'
+  };
+
+  function normalize(r) {
+    r = r && typeof r === 'object' ? r : {};
+    var conf = str(r.confidence).toLowerCase();
+    var cost = r.proCost && typeof r.proCost === 'object' ? r.proCost : {};
+    function items(list, withQty) {
+      return arr(list).slice(0, 14).map(function (t) {
+        t = t && typeof t === 'object' ? t : {};
+        var o = { name: str(t.name), price: num(t.price), search: str(t.search) || str(t.name) };
+        if (withQty) { o.spec = str(t.spec); o.qty = t.qty === undefined || t.qty === null ? '' : String(t.qty).slice(0, 30); }
+        else { o.why = str(t.why); }
+        return o;
+      }).filter(function (t) { return t.name; });
+    }
+    return {
+      needsBetterPhoto: str(r.needsBetterPhoto) || null,
+      problem: str(r.problem, 'Repair needed'),
+      summary: str(r.summary),
+      confidence: ['high', 'medium', 'low'].indexOf(conf) >= 0 ? conf : 'medium',
+      difficulty: str(r.difficulty, 'Intermediate'),
+      timeEstimate: str(r.timeEstimate, 'Unknown'),
+      needsPro: r.needsPro === true,
+      needsProReason: str(r.needsProReason) || null,
+      proType: str(r.proType, 'handyman'),
+      proCost: { low: num(cost.low), high: num(cost.high) },
+      safety: arr(r.safety).map(function (s) { return str(s); }).filter(Boolean).slice(0, 5),
+      stopAndCallPro: arr(r.stopAndCallPro).map(function (s) { return str(s); }).filter(Boolean).slice(0, 4),
+      tools: items(r.tools, false),
+      materials: items(r.materials, true),
+      steps: arr(r.steps).slice(0, 14).map(function (s) {
+        s = s && typeof s === 'object' ? s : {};
+        return { title: str(s.title, 'Step'), detail: str(s.detail), tip: str(s.tip) || null };
+      }),
+      videoSearches: arr(r.videoSearches).map(function (s) { return str(s); }).filter(Boolean).slice(0, 4),
+      quoteRequest: str(r.quoteRequest)
+    };
+  }
+  function ytUrl(q) { return 'https://www.youtube.com/results?search_query=' + enc(q); }
+
+  /* State */
+  var current = normalize(EXAMPLE);
+  var isExample = true;
+  var owned = new Set();
+  var activeTab = 'steps';
+  var quotes = loadQuotes();
+  var photo = null, photoUrl = null;
+  var imageLimits = { mediaTypes: ['image/jpeg', 'image/png', 'image/webp', 'image/gif'], maxInputBytes: 25 * 1024 * 1024 };
+  var busy = false, ctl = null, progressTimer = null;
+
+  function loadQuotes() {
+    try {
+      var v = JSON.parse(localStorage.getItem('snapfix-quotes') || '[]');
+      return Array.isArray(v) ? v.filter(function (q) { return q && typeof q.name === 'string' && isFinite(q.amount); }) : [];
+    } catch (e) { return []; }
+  }
+  function saveQuotes() { try { localStorage.setItem('snapfix-quotes', JSON.stringify(quotes)); } catch (e) { /* storage unavailable */ } }
+
+  function diyTotal() {
+    var t = 0;
+    current.tools.forEach(function (it, i) { if (!owned.has('t' + i)) t += it.price; });
+    current.materials.forEach(function (it, i) { if (!owned.has('m' + i)) t += it.price; });
+    return t;
+  }
+  function updateTotals() {
+    document.querySelectorAll('[data-diy]').forEach(function (n) { n.textContent = money(diyTotal()); });
+    renderQuoteLog();
+  }
+
+  function flash(btn, text) {
+    var old = btn.dataset.label || btn.textContent;
+    btn.dataset.label = old;
+    btn.textContent = text;
+    setTimeout(function () { btn.textContent = old; }, 1600);
+  }
+  async function copyText(text, node, btn) {
+    try { await navigator.clipboard.writeText(text); flash(btn, 'Copied'); }
+    catch (e) {
+      var r = document.createRange(); r.selectNodeContents(node);
+      var s = window.getSelection(); s.removeAllRanges(); s.addRange(r);
+      flash(btn, 'Selected. Press copy.');
+    }
+  }
+
+  function chip(text, cls) { return el('span', { class: 'chip' + (cls ? ' ' + cls : ''), text: text }); }
+  function stat(k, v, diy) {
+    var val = el('div', { class: 'v', text: v });
+    if (diy) val.setAttribute('data-diy', '');
+    return el('div', { class: 'stat' }, el('div', { class: 'k', text: k }), val);
+  }
+
+  /* Results */
+  function renderResults() {
+    var box = $('#results');
+    box.textContent = '';
+    var d = current;
+
+    if (isExample) {
+      box.append(el('div', { class: 'banner' }, el('b', { text: 'Example result. ' }), 'Add your own photo and press Diagnose to replace it.'));
+    }
+    if (d.needsBetterPhoto) {
+      box.append(el('div', { class: 'notice' }, el('h3', { text: 'Need a clearer look' }), el('p', { text: d.needsBetterPhoto })));
+      return;
+    }
+
+    var chips = el('div', { class: 'chips' },
+      chip('Confidence: ' + d.confidence, d.confidence === 'high' ? 'good' : (d.confidence === 'low' ? 'warn' : '')),
+      d.needsPro ? chip('Pro recommended', 'warn') : chip('DIY friendly', 'good')
+    );
+    box.append(el('header', { class: 'diag' }, chips, el('h2', { text: d.problem }), el('p', { class: 'lede', text: d.summary })));
+
+    var pr = d.proCost;
+    box.append(el('div', { class: 'stats' },
+      stat('DIY cost, est.', money(diyTotal()), true),
+      stat('Pro cost, est.', pr.high > 0 ? money(pr.low) + '–' + money(pr.high) : 'Unknown'),
+      stat('Time', d.timeEstimate),
+      stat('Difficulty', d.difficulty)
+    ));
+
+    if (d.needsPro) {
+      box.append(el('div', { class: 'danger' }, el('h3', { text: 'A pro is the safer choice' }), el('p', { text: d.needsProReason || 'This repair carries enough risk that a licensed pro is the better call.' })));
+    }
+    if (d.safety.length || d.stopAndCallPro.length) {
+      var s = el('div', { class: 'safety' });
+      if (d.safety.length) s.append(el('div', null, el('h3', { text: 'Before you start' }), el('ul', null, d.safety.map(function (t) { return el('li', { text: t }); }))));
+      if (d.stopAndCallPro.length) s.append(el('div', null, el('h3', { text: 'Stop and call a pro if' }), el('ul', null, d.stopAndCallPro.map(function (t) { return el('li', { text: t }); }))));
+      box.append(s);
+    }
+
+    var tabDefs = [
+      ['steps', 'Repair steps', d.steps.length],
+      ['shop', 'Shopping list', d.tools.length + d.materials.length],
+      ['videos', 'How-to videos', null],
+      ['pros', 'Pro quotes', null]
+    ];
+    var tabs = el('div', { class: 'tabs', role: 'tablist', 'aria-label': 'Repair plan sections' });
+    var panels = {};
+    tabDefs.forEach(function (t) {
+      var b = el('button', { class: 'tab', role: 'tab', id: 'tab-' + t[0], 'aria-controls': 'panel-' + t[0], 'aria-selected': String(activeTab === t[0]), type: 'button' },
+        t[1], t[2] !== null ? el('span', { class: 'count', text: String(t[2]) }) : null);
+      b.addEventListener('click', function () { selectTab(t[0]); });
+      tabs.append(b);
+    });
+    function selectTab(id) {
+      activeTab = id;
+      tabs.querySelectorAll('.tab').forEach(function (b) { b.setAttribute('aria-selected', String(b.id === 'tab-' + id)); });
+      Object.keys(panels).forEach(function (k) { panels[k].hidden = k !== id; });
+    }
+    panels.steps = buildSteps(d);
+    panels.shop = buildShop(d);
+    panels.videos = buildVideos(d);
+    panels.pros = buildPros(d);
+    box.append(tabs);
+    Object.keys(panels).forEach(function (k) { box.append(panels[k]); });
+    selectTab(activeTab);
+    renderQuoteLog();
+  }
+
+  function buildSteps(d) {
+    var panel = el('div', { class: 'panel', role: 'tabpanel', id: 'panel-steps', 'aria-labelledby': 'tab-steps' });
+    var prog = el('p', { class: 'progress', text: '0 of ' + d.steps.length + ' steps done' });
+    var ol = el('ol', { class: 'steps' });
+    var done = 0;
+    d.steps.forEach(function (s, i) {
+      var cb = el('input', { type: 'checkbox', id: 'step-' + i });
+      var li = el('li', null,
+        el('div', { class: 'n', text: String(i + 1), 'aria-hidden': 'true' }),
+        el('div', { class: 'body' },
+          el('h3', { class: 'st-title', text: s.title }),
+          el('p', { text: s.detail }),
+          s.tip ? el('p', { class: 'tip' }, el('b', { text: 'Tip ' }), s.tip) : null,
+          el('p', { class: 'tip' }, el('a', { href: ytUrl(d.problem + ' ' + s.title), target: '_blank', rel: 'noopener noreferrer', text: 'Watch this step on YouTube' }))),
+        el('label', { class: 'done-box', for: 'step-' + i }, cb, 'Done'));
+      cb.addEventListener('change', function () {
+        li.classList.toggle('done', cb.checked);
+        done += cb.checked ? 1 : -1;
+        prog.textContent = done + ' of ' + d.steps.length + ' steps done';
+      });
+      ol.append(li);
+    });
+    panel.append(prog, ol);
+    return panel;
+  }
+
+  function itemRow(kind, i, it) {
+    var key = kind + i;
+    var id = 'own-' + key;
+    var cb = el('input', { type: 'checkbox', id: id });
+    if (owned.has(key)) cb.checked = true;
+    var sub = kind === 't' ? it.why : [it.spec, it.qty ? 'Qty: ' + it.qty : ''].filter(Boolean).join(' · ');
+    var links = el('span', { class: 'links-inline', style: 'display:contents' },
+      el('span', { class: 'muted', text: 'Find:' }),
+      RETAIL.map(function (r) { return el('a', { href: r[1](it.search), target: '_blank', rel: 'noopener noreferrer', text: r[0] }); }));
+    var row = el('div', { class: 'item' + (owned.has(key) ? ' have' : '') },
+      el('div', { class: 'name', text: it.name }),
+      el('div', { class: 'price', text: it.price ? money(it.price) : '–' }),
+      sub ? el('div', { class: 'sub', text: sub }) : null,
+      el('div', { class: 'meta' }, links, el('label', { class: 'own', for: id }, cb, 'I have this')));
+    cb.addEventListener('change', function () {
+      if (cb.checked) owned.add(key); else owned.delete(key);
+      row.classList.toggle('have', cb.checked);
+      updateTotals();
+    });
+    return row;
+  }
+
+  function buildShop(d) {
+    var panel = el('div', { class: 'panel', role: 'tabpanel', id: 'panel-shop', 'aria-labelledby': 'tab-shop' });
+    if (d.tools.length) panel.append(el('h3', { text: 'Tools' }), el('div', { class: 'items' }, d.tools.map(function (it, i) { return itemRow('t', i, it); })));
+    if (d.materials.length) panel.append(el('h3', { text: 'Parts and materials' }), el('div', { class: 'items' }, d.materials.map(function (it, i) { return itemRow('m', i, it); })));
+    panel.append(el('div', { class: 'total' }, el('span', { text: 'Estimated total for what you still need' }), el('span', { class: 'num', 'data-diy': '', text: money(diyTotal()) })));
+    panel.append(el('p', { class: 'fine', text: 'Prices are rough US retail estimates. Links open a search at each store, so check stock and price there. Tick "I have this" to remove an item from the total.' }));
+    return panel;
+  }
+
+  function buildVideos(d) {
+    var panel = el('div', { class: 'panel', role: 'tabpanel', id: 'panel-videos', 'aria-labelledby': 'tab-videos' });
+    var queries = d.videoSearches.length ? d.videoSearches : [d.problem + ' how to fix'];
+    panel.append(el('h3', { text: 'Watch it done first' }));
+    panel.append(el('p', { class: 'muted', text: 'Each link opens a YouTube search for this exact repair in a new tab. Pick a video that matches your fixture, and pause before each step.' }));
+    panel.append(el('div', { class: 'items' }, queries.map(function (q) {
+      return el('div', { class: 'item' },
+        el('div', { class: 'name', text: q }),
+        el('div', { class: 'meta' }, el('a', { href: ytUrl(q), target: '_blank', rel: 'noopener noreferrer', text: 'Search YouTube' }), el('a', { href: ytUrl(q + ' beginner'), target: '_blank', rel: 'noopener noreferrer', text: 'Beginner videos' })));
+    })));
+    panel.append(el('p', { class: 'fine', text: 'Snapfix cannot play videos inside this page or check which ones are good. Look for recent uploads that show your exact brand or model, and cross-check the steps here.' }));
+    return panel;
+  }
+
+  function buildPros(d) {
+    var panel = el('div', { class: 'panel', role: 'tabpanel', id: 'panel-pros', 'aria-labelledby': 'tab-pros' });
+    var pr = d.proCost;
+    panel.append(el('div', { class: 'compare' },
+      el('div', { class: 'card' }, el('div', { class: 'label-h', text: 'Typical ' + d.proType + ' price, est.' }), el('div', { class: 'big', text: pr.high > 0 ? money(pr.low) + '–' + money(pr.high) : 'Unknown' }), el('p', { class: 'fine', text: 'An AI estimate of parts and labor. It is not a quote.' })),
+      el('div', { class: 'card hl' }, el('div', { class: 'label-h', text: 'Doing it yourself, est.' }), el('div', { class: 'big', 'data-diy': '', text: money(diyTotal()) }), el('p', { class: 'fine', text: 'Tools and parts you still need.' }))
+    ));
+
+    var zip = ($('#zip').value || '').trim();
+    var where = zip ? ' near ' + zip : ' near me';
+    var q = d.proType + where;
+    panel.append(el('h3', { text: 'Find pros' }));
+    panel.append(el('div', { class: 'card' },
+      el('p', { class: 'label-h', text: 'Local and independent' }),
+      el('div', { class: 'links', style: 'margin-top:8px' },
+        el('a', { href: 'https://www.google.com/maps/search/' + enc(q), target: '_blank', rel: 'noopener noreferrer', text: 'Google Maps' }),
+        el('a', { href: 'https://www.yelp.com/search?find_desc=' + enc(d.proType) + '&find_loc=' + enc(zip || 'current location'), target: '_blank', rel: 'noopener noreferrer', text: 'Yelp' })),
+      el('p', { class: 'label-h', style: 'margin-top:14px', text: 'Larger platforms' }),
+      el('div', { class: 'links', style: 'margin-top:8px' },
+        el('a', { href: 'https://www.angi.com/', target: '_blank', rel: 'noopener noreferrer', text: 'Angi' }),
+        el('a', { href: 'https://www.thumbtack.com/', target: '_blank', rel: 'noopener noreferrer', text: 'Thumbtack' })),
+      el('p', { class: 'fine', style: 'margin-top:12px', text: 'Snapfix cannot pull live bids from these sites yet. Send each one the same request below, then log what comes back.' })
+    ));
+
+    if (d.quoteRequest) {
+      var text = d.quoteRequest + (zip ? '\nLocation: ' + zip : '');
+      var pre = el('div', { class: 'request', id: 'request-text', text: text });
+      var cbtn = el('button', { class: 'btn small', type: 'button', text: 'Copy request' });
+      cbtn.addEventListener('click', function () { copyText(text, pre, cbtn); });
+      panel.append(el('h3', { text: 'Ask for a quote' }), pre, el('div', null, cbtn));
+    }
+
+    panel.append(el('h3', { text: 'Compare the quotes you get' }));
+    var name = el('input', { id: 'q-name', placeholder: 'Company name', maxlength: '60' });
+    var kind = el('select', { id: 'q-kind' }, el('option', { value: 'Local', text: 'Local' }), el('option', { value: 'National', text: 'National' }));
+    var amt = el('input', { id: 'q-amt', type: 'number', min: '0', step: '1', inputmode: 'decimal', placeholder: 'Quote $' });
+    var add = el('button', { class: 'btn small', type: 'button', text: 'Add quote' });
+    add.addEventListener('click', function () {
+      var a = Number(amt.value);
+      if (!name.value.trim() || !isFinite(a) || a <= 0) { name.focus(); return; }
+      quotes.push({ name: name.value.trim().slice(0, 60), kind: kind.value, amount: a });
+      saveQuotes();
+      name.value = ''; amt.value = '';
+      renderQuoteLog();
+    });
+    panel.append(el('div', { class: 'qform' },
+      el('div', { class: 'field' }, el('label', { for: 'q-name', text: 'Company' }), name),
+      el('div', { class: 'field' }, el('label', { for: 'q-kind', text: 'Type' }), kind),
+      el('div', { class: 'field' }, el('label', { for: 'q-amt', text: 'Amount' }), amt),
+      add));
+    panel.append(el('div', { id: 'quote-log', class: 'items' }));
+    panel.append(el('p', { class: 'fine', text: 'Quotes you log stay in this browser only.' }));
+    return panel;
+  }
+
+  function renderQuoteLog() {
+    var host = $('#quote-log');
+    if (!host) return;
+    host.textContent = '';
+    if (!quotes.length) {
+      host.append(el('p', { class: 'muted', text: 'No quotes yet. Add each estimate you receive and Snapfix will flag the lowest and show how it compares with doing the job yourself.' }));
+      return;
+    }
+    var min = Math.min.apply(null, quotes.map(function (q) { return q.amount; }));
+    var diy = diyTotal();
+    quotes.forEach(function (q, i) {
+      var diff = q.amount - diy;
+      var note = diy > 0
+        ? (diff >= 0 ? money(diff) + ' more than doing it yourself' : money(-diff) + ' less than doing it yourself')
+        : '';
+      var rm = el('button', { class: 'btn ghost small', type: 'button', text: 'Remove', 'aria-label': 'Remove quote from ' + q.name });
+      rm.addEventListener('click', function () { quotes.splice(i, 1); saveQuotes(); renderQuoteLog(); });
+      host.append(el('div', { class: 'qrow' + (q.amount === min && quotes.length > 1 ? ' low' : '') },
+        el('div', null, el('b', { text: q.name }), ' ', chip(q.kind, q.amount === min && quotes.length > 1 ? 'good' : ''), q.amount === min && quotes.length > 1 ? chip('Lowest', 'good') : null),
+        el('div', { class: 'amt', text: money(q.amount) }), rm,
+        note ? el('div', { class: 'note', text: note }) : null));
+    });
+  }
+
+  /* Intake */
+  function setStatus(text, isErr) {
+    var s = $('#status');
+    s.textContent = text || '';
+    s.classList.toggle('err', !!isErr);
+  }
+  function setPhoto(f) {
+    if (!f) return;
+    if (!/^image\//.test(f.type)) { setStatus('Choose an image file.', true); return; }
+    if (imageLimits && imageLimits.mediaTypes && imageLimits.mediaTypes.indexOf(f.type) < 0) { setStatus('Use a JPEG, PNG, WebP or GIF photo.', true); return; }
+    if (imageLimits && f.size > imageLimits.maxInputBytes) { setStatus('That photo is too large. Try a smaller one.', true); return; }
+    if (photoUrl) URL.revokeObjectURL(photoUrl);
+    photo = f;
+    photoUrl = URL.createObjectURL(f);
+    var img = $('#preview');
+    img.src = photoUrl; img.hidden = false;
+    $('#drop').classList.add('has-photo');
+    $('#remove-photo').hidden = false;
+    setStatus('');
+  }
+  function clearPhoto() {
+    if (photoUrl) URL.revokeObjectURL(photoUrl);
+    photo = null; photoUrl = null;
+    var img = $('#preview');
+    img.removeAttribute('src'); img.hidden = true;
+    $('#drop').classList.remove('has-photo');
+    $('#remove-photo').hidden = true;
+    $('#photo').value = '';
+  }
+  $('#photo').addEventListener('change', function (e) { setPhoto(e.target.files && e.target.files[0]); });
+  $('#remove-photo').addEventListener('click', clearPhoto);
+  var drop = $('#drop');
+  ['dragenter', 'dragover'].forEach(function (ev) { drop.addEventListener(ev, function (e) { e.preventDefault(); drop.classList.add('over'); }); });
+  ['dragleave', 'drop'].forEach(function (ev) { drop.addEventListener(ev, function (e) { e.preventDefault(); drop.classList.remove('over'); }); });
+  drop.addEventListener('drop', function (e) { var f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]; if (f) setPhoto(f); });
+
+  var PROGRESS = ['Looking at your photo', 'Working out the cause', 'Writing the repair steps', 'Pricing tools and parts', 'Almost done'];
+  function startProgress() {
+    var i = 0;
+    setStatus(PROGRESS[0] + '…');
+    progressTimer = setInterval(function () { i = Math.min(i + 1, PROGRESS.length - 1); setStatus(PROGRESS[i] + '…'); }, 6000);
+  }
+  function stopProgress() { clearInterval(progressTimer); progressTimer = null; }
+  function setBusy(b) {
+    busy = b;
+    $('#go').disabled = b;
+    $('#stop').hidden = !b;
+  }
+
+  var ERRORS = {
+    not_granted: 'Snapfix needs your permission to use Claude. Reload the page and allow it when asked.',
+    rate_limited: 'Too many requests right now. Wait a minute, then try again.',
+    session_expired: 'Your session expired. Sign in again, then retry.',
+    sampling_disabled: 'Claude is not available for this account.',
+    image_rejected: 'That photo could not be read. Try another one.',
+    images_unavailable: 'Photo analysis is not available in this view. Describe the problem in words instead.',
+    refused: 'Claude could not help with that photo. Try a different one or describe the problem.',
+    empty_completion: 'No answer came back. Try again with a clearer photo or more detail.',
+    invalid_json: 'The answer came back garbled. Press Diagnose to try again.',
+    prompt_too_large: 'That description is too long. Shorten it and try again.',
+    daily_limit: 'Snapfix has reached its limit for today. Please try again tomorrow.',
+    busy: 'Claude is busy right now. Wait a minute and try again.',
+    image_too_large: 'That photo is too large. Try a smaller one.',
+    bad_request: 'Add a photo or describe the problem, then try again.',
+    not_configured: 'This site is not set up yet. The owner needs to add an API key.',
+    parse_error: 'The answer came back garbled. Press Diagnose to try again.',
+    upstream_error: 'Something went wrong on our side. Press Diagnose to try again.'
+  };
+
+  function resizeImage(file, maxSide) {
+    return new Promise(function (resolve, reject) {
+      var url = URL.createObjectURL(file);
+      var img = new Image();
+      img.onload = function () {
+        URL.revokeObjectURL(url);
+        var w = img.naturalWidth, h = img.naturalHeight;
+        var scale = Math.min(1, maxSide / Math.max(w, h));
+        var c = document.createElement('canvas');
+        c.width = Math.max(1, Math.round(w * scale));
+        c.height = Math.max(1, Math.round(h * scale));
+        c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+        c.toBlob(function (b) { if (b) resolve(b); else reject({ code: 'image_rejected' }); }, 'image/jpeg', 0.85);
+      };
+      img.onerror = function () { URL.revokeObjectURL(url); reject({ code: 'image_rejected' }); };
+      img.src = url;
+    });
+  }
+  function blobToBase64(blob) {
+    return new Promise(function (resolve, reject) {
+      var fr = new FileReader();
+      fr.onload = function () { resolve(String(fr.result).split(',')[1] || ''); };
+      fr.onerror = function () { reject({ code: 'image_rejected' }); };
+      fr.readAsDataURL(blob);
+    });
+  }
+
+  async function diagnose() {
+    if (busy) return;
+    var notes = $('#notes').value.trim();
+    if (!photo && !notes) { setStatus('Add a photo or describe the problem first.', true); return; }
+    var body = { notes: notes, zip: $('#zip').value.trim(), skill: $('#skill').value };
+    ctl = new AbortController();
+    setBusy(true);
+    startProgress();
+    try {
+      if (photo) {
+        var small = await resizeImage(photo, 1600);
+        body.image = await blobToBase64(small);
+        body.mediaType = 'image/jpeg';
+      }
+      var res = await fetch('/api/diagnose', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+        signal: ctl.signal
+      });
+      var data = null;
+      try { data = await res.json(); } catch (e) { data = null; }
+      if (!res.ok || !data || !data.result) {
+        throw { code: (data && data.error && data.error.code) || (res.status === 429 ? 'rate_limited' : 'upstream_error') };
+      }
+      current = normalize(data.result);
+      isExample = false;
+      owned = new Set();
+      activeTab = 'steps';
+      renderResults();
+      setStatus(current.needsBetterPhoto ? '' : 'Done. Scroll the plan below.');
+      if (window.innerWidth <= 880) {
+        var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        $('#results').scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
+      }
+    } catch (e) {
+      if (e && e.name === 'AbortError') setStatus('Stopped.');
+      else setStatus((e && ERRORS[e.code]) || 'Something went wrong. Press Diagnose to try again.', true);
+    } finally {
+      stopProgress();
+      setBusy(false);
+      ctl = null;
+    }
+  }
+  $('#go').addEventListener('click', diagnose);
+  $('#stop').addEventListener('click', function () { if (ctl) ctl.abort(); });
+  $('#zip').addEventListener('change', function () {
+    var panel = $('#panel-pros');
+    if (panel && !isExample) { var wasHidden = panel.hidden; var fresh = buildPros(current); panel.replaceWith(fresh); fresh.hidden = wasHidden; renderQuoteLog(); }
+    else if (panel) { var h = panel.hidden; var f2 = buildPros(current); panel.replaceWith(f2); f2.hidden = h; renderQuoteLog(); }
+  });
+
+  /* Init: show the example so the page opens in a working state */
+  renderResults();
+})();
+</script>
+</body>
+</html>
