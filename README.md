@@ -7,7 +7,11 @@ This is a small website plus a tiny server. The server holds your Claude API key
 ## Files
 
 - `server.js`: serves the site and handles `POST /api/diagnose`. The prompt lives here.
-- `public/index.html`: the whole interface.
+- `pricing.json`: the numbers behind every estimate (hourly rates, minimum charge, shelf prices). Edit this to tune prices.
+- `pricing.js`: turns Claude's answer into steady, rounded prices using `pricing.json`.
+- `public/index.html` + `public/intake.js`: page 1, where people add a photo, notes and ZIP code.
+- `public/results.html` + `public/results.js`: page 2, the repair plan, shown after the diagnosis finishes.
+- `public/styles.css`: the look of both pages.
 - `public/manifest.webmanifest`, `public/icon.svg`: let people add Snapfix to their home screen.
 - `test.js`: run `npm test` to check the server. It needs no API key.
 
@@ -29,11 +33,28 @@ Any host that runs Node works (Render, Railway, Fly.io and similar). On Render, 
 
 Keep `TRUST_PROXY` at its default on these hosts. Set `TRUST_PROXY=0` only if you run the server exposed directly to the internet.
 
+## Show it inside Google Sites
+
+Google Sites cannot run this server, so host it first (see above), then embed it:
+
+1. On your host, add the environment variable `FRAME_ANCESTORS` set to `https://sites.google.com https://*.googleusercontent.com`. Without it the site refuses to appear inside other pages.
+2. In Google Sites, choose Insert, then Embed, then By URL, and paste your site's address (it must start with https).
+3. Resize the embed so it is tall enough, then publish the Google Site.
+
+If the embed shows "refused to connect", open the browser's developer console and look for the blocked ancestor, then add that origin to `FRAME_ANCESTORS`. Phone cameras can be more awkward inside an embedded frame, so also link to the site's own address for phone visitors.
+
+## Making small changes
+
+- **Prices:** edit `pricing.json`. Change `hourlyRates` and `minimumCharge` to match real quotes in your area, and add items to `priceGuide` (names in lowercase). Claude only decides what the job is, which items it needs and how many hours it takes; the dollar amounts come from this file, so the same job shows the same prices.
+- **Same answer every time:** the server remembers each answer for 7 days, keyed on the photo, notes, ZIP code and experience level. Repeating the same request returns the saved answer. The memory is cleared when the server restarts or sleeps, and any edit to `pricing.json` makes old answers be ignored.
+- **Wording or looks:** text is in the `.html` files, colors and layout in `public/styles.css`. On GitHub you can open a file, click the pencil icon, edit, and Commit; Render redeploys by itself in a few minutes.
+- **What Claude is told to do:** the prompt is in `server.js`. Raise `PROMPT_VERSION` after changing it so old saved answers are dropped.
+
 ## Costs and abuse protection
 
 Every diagnosis is a paid Claude API call on your key. The server limits each visitor to `HOURLY_LIMIT` diagnoses per hour (default 12) and the whole site to `DAILY_LIMIT` per day (default 300). The counters are in memory and reset when the server restarts. Check the Console for usage and any spending limits it offers, and lower these numbers while you are testing.
 
-Change the model with `CLAUDE_MODEL` (default `claude-sonnet-5-5`).
+Change the model with `CLAUDE_MODEL` (default `claude-sonnet-5-5`). The API version sent to Claude is `ANTHROPIC_VERSION` (default `2023-06-01`, which works with the live site). If a diagnosis fails, open the Logs tab on your host: the server prints the HTTP status and Claude's error message there, never your key.
 
 ## Before you open it to the public
 

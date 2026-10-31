@@ -1,0 +1,10 @@
+{
+  "name": "Snapfix",
+  "short_name": "Snapfix",
+  "description": "Photograph a home repair problem and get the fix, the shopping list and pro quotes.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ECEFEA",
+  "theme_color": "#F2B600",
+  "icons": [{ "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+}

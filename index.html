@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Snapfix</title>
+<meta name="description" content="Photograph a home repair problem. Get the diagnosis, step-by-step fix, shopping list and a way to compare pro quotes.">
+<meta name="theme-color" content="#F2B600">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" href="/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/icon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=IBM+Plex+Mono:wght@400;500&family=Public+Sans:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+<div class="shell page">
+  <header class="top">
+    <h1 class="brand">Snap<span>fix</span></h1>
+    <p class="tag">Photograph the problem. Get the repair steps, a shopping list, and what a pro would charge.</p>
+  </header>
+  <div class="ruler" aria-hidden="true"></div>
+  <main style="margin-top:28px">
+    <section class="intake solo" aria-labelledby="intake-h">
+      <div>
+        <p class="label-h">Step 1 of 2</p>
+        <h2 id="intake-h">What's broken?</h2>
+        <p class="lead">Add a photo and your ZIP code. Snapfix works out the problem, then opens your repair plan on the next page.</p>
+      </div>
+
+      <label class="drop" id="drop" for="photo">
+        <input id="photo" type="file" accept="image/*">
+        <div class="drop-text">
+          <strong>Add a photo</strong>
+          <span class="muted">Tap to take or choose one, or drop it here. Get close and show the whole fixture.</span>
+        </div>
+        <img id="preview" alt="Your photo of the problem" hidden>
+      </label>
+      <button class="btn ghost small remove-photo" id="remove-photo" type="button" hidden>Remove photo</button>
+
+      <div class="field">
+        <label for="notes">What's happening? (optional)</label>
+        <textarea id="notes" placeholder="Drips even when the handle is off. Started last week."></textarea>
+      </div>
+      <div class="two">
+        <div class="field">
+          <label for="zip">ZIP code</label>
+          <input id="zip" inputmode="numeric" autocomplete="postal-code" maxlength="10" placeholder="For local pro prices">
+        </div>
+        <div class="field">
+          <label for="skill">Your experience</label>
+          <select id="skill">
+            <option value="a beginner who has never done this repair">Beginner</option>
+            <option value="comfortable with basic tools and simple repairs" selected>Handy</option>
+            <option value="experienced with home repair">Experienced</option>
+          </select>
+        </div>
+      </div>
+      <div style="display:flex; gap:10px; flex-wrap:wrap">
+        <button class="btn" id="go" type="button">Diagnose</button>
+        <button class="btn ghost" id="stop" type="button" hidden>Stop</button>
+      </div>
+      <div class="bar" id="bar" aria-hidden="true" hidden><i></i></div>
+      <p class="status" id="status" role="status" aria-live="polite"></p>
+      <p class="fine">Your photo is shrunk on your device, then sent to Claude to be analyzed. Snapfix does not keep it.</p>
+    </section>
+    <ol class="how">
+      <li><span class="n">01</span><b>Photo</b>Show the problem up close.</li>
+      <li><span class="n">02</span><b>Diagnose</b>Claude works out the cause.</li>
+      <li><span class="n">03</span><b>Plan</b>Steps, parts, videos, pro costs.</li>
+    </ol>
+  </main>
+  <p class="foot" >Diagnoses and prices are AI estimates from a photo, not an inspection or a quote. For gas, main electrical, structural work, mold, or anything where a mistake could hurt someone, hire a licensed pro.</p>
+</div>
+<script src="/intake.js"></script>
+</body>
+</html>
